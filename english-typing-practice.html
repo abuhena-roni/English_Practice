@@ -1,0 +1,454 @@
+<!--
+English Typing Practice Web (single HTML file)
+Instructions (Bengali):
+1) "Target Paragraph" বাক্সে আপনি যে paragraph দিয়ে practice করতে চান সেটা paste / type করুন।
+2) "Start Test" চাপলে টেস্ট শুরু হবে — নিচের টেক্সট টা আপনার সামনে দেওয়া হবে এবং আপনি এটি টাইপ করবেন।
+3) টাইপিং চলাকালে সঠিক অক্ষরগুলো সবুজ হাইলাইট হবে, ভুল অক্ষরগুলো লাল।
+4) শেষ হলে ওয়ার্ড পার মিনিট (WPM), সঠিকতা (accuracy), সময়, মোট ভুল দেখাবে।
+5) Reset করলে আবার নতুন paragraph দিয়ে শুরু করতে পারবেন।
+
+এই ফাইলটি ব্রাউজারে খুলে সরাসরি ব্যবহার করতে পারবেন (double-click the file or open in browser).
+-->
+
+<!doctype html>
+<html lang="bn">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>English Typing Practice</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #0b1220;
+            --muted: #94a3b8;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --danger: #ef4444;
+            --glass: rgba(255, 255, 255, 0.03);
+            --radius: 12px;
+            --mono: 'Segoe UI Mono', 'Roboto Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+            margin: 0;
+            background: linear-gradient(180deg, #020617 0%, #071029 100%);
+            color: #e6eef8;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px
+        }
+
+        .wrap {
+            width: 100%;
+            max-width: 980px
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 18px
+        }
+
+        h1 {
+            font-size: 20px;
+            margin: 0
+        }
+
+        p.lead {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .card {
+            background: var(--card);
+            padding: 18px;
+            border-radius: var(--radius);
+            box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6)
+        }
+
+        .grid {
+            display: grid;
+            gap: 12px
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center
+        }
+
+        textarea,
+        input[type=text] {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            background: var(--glass);
+            color: inherit;
+            resize: vertical
+        }
+
+        label {
+            font-size: 13px;
+            color: var(--muted);
+            display: block;
+            margin-bottom: 6px
+        }
+
+        .row {
+            display: flex;
+            gap: 12px
+        }
+
+        .col {
+            flex: 1
+        }
+
+        .btn {
+            background: linear-gradient(90deg, var(--accent), #7dd3fc);
+            border: none;
+            padding: 10px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600
+        }
+
+        .btn.secondary {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.06)
+        }
+
+        .target-box {
+            padding: 14px;
+            border-radius: 8px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+            min-height: 140px;
+            overflow: auto;
+            line-height: 1.6
+        }
+
+        .target-box span {
+            white-space: pre-wrap
+        }
+
+        .char {
+            padding: 0 1px
+        }
+
+        .char.correct {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--success);
+            border-bottom: 2px solid rgba(16, 185, 129, 0.25)
+        }
+
+        .char.incorrect {
+            background: rgba(239, 68, 68, 0.06);
+            color: var(--danger);
+            border-bottom: 2px solid rgba(239, 68, 68, 0.25)
+        }
+
+        .char.current {
+            outline: 2px dotted rgba(255, 255, 255, 0.04);
+        }
+
+        .stats {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap
+        }
+
+        .stat {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 10px 12px;
+            border-radius: 10px;
+            min-width: 120px
+        }
+
+        .stat h3 {
+            margin: 0;
+            font-size: 16px
+        }
+
+        .stat p {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .progress {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 999px;
+            overflow: hidden
+        }
+
+        .progress>i {
+            display: block;
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), #60a5fa);
+            width: 0%
+        }
+
+        footer {
+            margin-top: 14px;
+            color: var(--muted);
+            font-size: 12px
+        }
+
+        @media (max-width:720px) {
+            .row {
+                flex-direction: column
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <header>
+            <div>
+                <h1>English Typing Practice</h1>
+                <p class="lead">Paragraph দিন → Start → টাইপ করুন — সঠিকতা ও WPM রিয়েল-টাইমে দেখাবে।</p>
+            </div>
+            <div>
+                <small style="color:var(--muted)">Made for practice • Simple & offline</small>
+            </div>
+        </header>
+
+        <section class="card grid">
+            <div class="row">
+                <div class="col">
+                    <label for="source">Target Paragraph (এখানে paragraph paste করুন)</label>
+                    <textarea id="source" rows="5"
+                        placeholder="Type or paste the paragraph here...">The quick brown fox jumps over the lazy dog.</textarea>
+                </div>
+                <div style="width:260px">
+                    <label for="timeLimit">Time limit (seconds, 0 = no limit)</label>
+                    <input id="timeLimit" type="number" min="0" value="0" />
+                    <div style="height:12px"></div>
+                    <div class="controls">
+                        <button id="startBtn" class="btn">Start Test</button>
+                        <button id="resetBtn" class="btn secondary">Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label>Target Text</label>
+                <div id="target" class="target-box" aria-live="polite" tabindex="0"></div>
+            </div>
+
+            <div>
+                <label for="input">Type here</label>
+                <textarea id="input" rows="4" placeholder="Start typing after you press Start..." disabled></textarea>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <h3 id="wpm">0</h3>
+                    <p>WPM</p>
+                </div>
+                <div class="stat">
+                    <h3 id="accuracy">0%</h3>
+                    <p>Accuracy</p>
+                </div>
+                <div class="stat">
+                    <h3 id="errors">0</h3>
+                    <p>Errors</p>
+                </div>
+                <div class="stat">
+                    <h3 id="elapsed">0s</h3>
+                    <p>Elapsed</p>
+                </div>
+                <div class="stat">
+                    <h3 id="progressNum">0%</h3>
+                    <p>Progress</p>
+                </div>
+            </div>
+
+            <div style="margin-top:8px">
+                <div class="progress"><i id="progressBar"></i></div>
+            </div>
+
+            <footer>
+                Tip: আপনি চাইলে ভারবলে একটি ছোট paragraph সেট করে practice করতে পারেন। Reset করলে সব রিসেট হবে।
+            </footer>
+        </section>
+    </div>
+
+    <script>
+        // Elements
+        const sourceEl = document.getElementById('source');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const targetEl = document.getElementById('target');
+        const inputEl = document.getElementById('input');
+        const timeLimitEl = document.getElementById('timeLimit');
+
+        const wpmEl = document.getElementById('wpm');
+        const accuracyEl = document.getElementById('accuracy');
+        const errorsEl = document.getElementById('errors');
+        const elapsedEl = document.getElementById('elapsed');
+        const progressBar = document.getElementById('progressBar');
+        const progressNum = document.getElementById('progressNum');
+
+        let targetText = '';
+        let chars = [];
+        let startTime = null;
+        let timerInterval = null;
+        let totalErrors = 0;
+        let typedChars = 0;
+
+        function renderTarget(text) {
+            targetEl.innerHTML = '';
+            chars = [];
+            for (let i = 0; i < text.length; i++) {
+                const span = document.createElement('span');
+                span.className = 'char';
+                span.textContent = text[i];
+                targetEl.appendChild(span);
+                chars.push(span);
+            }
+        }
+
+        function resetAll() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            startTime = null;
+            totalErrors = 0;
+            typedChars = 0;
+            wpmEl.textContent = '0';
+            accuracyEl.textContent = '0%';
+            errorsEl.textContent = '0';
+            elapsedEl.textContent = '0s';
+            progressBar.style.width = '0%';
+            progressNum.textContent = '0%';
+            inputEl.value = '';
+            inputEl.disabled = true;
+            targetText = sourceEl.value || '';
+            renderTarget(targetText);
+        }
+
+        function startTest() {
+            targetText = sourceEl.value || '';
+            if (!targetText.trim()) {
+                alert('Please enter a paragraph in the Target Paragraph box.');
+                return;
+            }
+            resetAll();
+            inputEl.disabled = false;
+            inputEl.focus();
+            startTime = Date.now();
+            timerInterval = setInterval(updateStats, 200);
+            // highlight first char as current
+            if (chars[0]) chars[0].classList.add('current');
+            startBtn.disabled = true;
+        }
+
+        function finishTest() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            inputEl.disabled = true;
+            startBtn.disabled = false;
+            updateStats();
+            // final message optional
+        }
+
+        function updateStats() {
+            const now = Date.now();
+            const elapsedMs = now - startTime;
+            const elapsedS = Math.floor(elapsedMs / 1000);
+            elapsedEl.textContent = elapsedS + 's';
+
+            const typed = inputEl.value; // what user typed
+            typedChars = typed.length;
+            let correctCount = 0;
+            let errors = 0;
+
+            for (let i = 0; i < chars.length; i++) {
+                const ch = chars[i];
+                const expected = ch.textContent;
+                const typedChar = typed[i];
+                ch.classList.remove('correct', 'incorrect', 'current');
+                if (typedChar == null) {
+                    // not typed yet
+                } else if (typedChar === expected) {
+                    ch.classList.add('correct');
+                    correctCount++;
+                } else {
+                    ch.classList.add('incorrect');
+                    errors++;
+                }
+            }
+
+            // mark current position
+            if (chars[typedChars]) chars[typedChars].classList.add('current');
+
+            totalErrors = errors;
+            errorsEl.textContent = totalErrors;
+
+            // WPM calculation: correct chars / 5 per word, per minute
+            const minutes = Math.max(1 / 60, elapsedMs / 60000); // avoid div by zero
+            const wpm = Math.round((correctCount / 5) / minutes);
+            wpmEl.textContent = wpm;
+
+            // accuracy
+            const accuracy = typedChars === 0 ? 0 : Math.round((correctCount / typedChars) * 100);
+            accuracyEl.textContent = accuracy + '%';
+
+            // progress
+            const prog = Math.round((correctCount / chars.length) * 100) || 0;
+            progressBar.style.width = prog + '%';
+            progressNum.textContent = prog + '%';
+
+            // time limit enforcement
+            const limit = Number(timeLimitEl.value) || 0;
+            if (limit > 0) {
+                if (elapsedS >= limit) {
+                    finishTest();
+                }
+            }
+
+            // finish when typed reach target length
+            if (typedChars >= chars.length) {
+                finishTest();
+            }
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startTest);
+        resetBtn.addEventListener('click', () => {
+            startBtn.disabled = false;
+            resetAll();
+        });
+
+        inputEl.addEventListener('input', () => {
+            if (!startTime) startTime = Date.now();
+            updateStats();
+        });
+
+        // initial render
+        renderTarget(sourceEl.value);
+
+        // allow pressing Ctrl+Enter in source to start
+        sourceEl.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                startTest();
+            }
+        });
+    </script>
+</body>
+
+</html>
